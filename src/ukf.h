@@ -4,6 +4,9 @@
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+
 class UKF {
  public:
   /**
@@ -41,7 +44,11 @@ class UKF {
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
-
+  void GenerateSigmaPoints(MatrixXd* Xsig);
+  void AugmentedSigmaPoints(MatrixXd* Xsig);
+  void SigmaPointPrediction(MatrixXd* Xsig_out, MatrixXd& Xsig_aug);
+  void PredictMeanAndCovariance(VectorXd* x_out, MatrixXd* P_out, MatrixXd& Xsig_pred);
+  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd& Xsig_pred);
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
@@ -61,7 +68,7 @@ class UKF {
   Eigen::MatrixXd Xsig_pred_;
 
   // time when the state is true, in us
-  long long time_us_;
+  long long time_us_ = -1;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   double std_a_;
@@ -96,5 +103,6 @@ class UKF {
   // Sigma point spreading parameter
   double lambda_;
 };
+
 
 #endif  // UKF_H
