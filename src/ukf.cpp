@@ -86,12 +86,12 @@ UKF::UKF() {
 
   // initial covariance matrix
   // Let's take a diffuse prior so no worries about initialization
-  P_ = 4*MatrixXd::Identity(5, 5);
-  P_(2,2) =100; // velocity really uncertain
-  P_(3,3) = 9; // and so is yaw
+  P_ = 3*MatrixXd::Identity(5, 5);
+  P_(2,2) =1000; // velocity really uncertain
+  //P_(3,3) = 9; // and so is yaw
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 3;
+  std_a_ = 1;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 1;
@@ -354,8 +354,8 @@ void UKF::ProcessSensor(VectorXd& z,
             error[1] -= M_PI;
         while(error[1] < -M_PI_2)
             error[1] += M_PI;
-        std::cout << "timestamp " << time_us_/1e6 << " yaw error " << error[1] << std::endl;
-    }
+        }
+    std::cout << "timestamp " << time_us_/1e6 << " error " << error << std::endl;
 
     x_ += K *error;
     P_ -= K*S*K.transpose();
