@@ -86,7 +86,9 @@ UKF::UKF() {
 
   // initial covariance matrix
   // Let's take a diffuse prior so no worries about initialization
-  P_ = 10*MatrixXd::Identity(5, 5);
+  P_ = 4*MatrixXd::Identity(5, 5);
+  P_(2,2) =100; // velocity really uncertain
+  P_(3,3) = 9; // and so is yaw
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 3;
@@ -151,10 +153,10 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     Prediction(delta_t);
 
     // And now measurement!
-    if(meas_package.sensor_type_ == MeasurementPackage::RADAR)
+    if(meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_)
         UpdateRadar(meas_package);
 
-    if(meas_package.sensor_type_ == MeasurementPackage::LASER)
+    if(meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_)
         UpdateLidar(meas_package);
 }
 
@@ -181,7 +183,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
    */
     auto sd = LidarSensorDetails();
     ProcessSensor(meas_package.raw_measurements_,// actual measurement
-                  sd
+                  sd, false
     );
 }
 
@@ -194,7 +196,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
    */
    auto sd = RadarSensorDetails();
     ProcessSensor(meas_package.raw_measurements_,// actual measurement
-                  sd
+                  sd, true
     );
 }
 
@@ -319,7 +321,8 @@ void UKF::PredictMeanAndCovariance(){
 
 
 void UKF::ProcessSensor(VectorXd& z,
-        SensorDetails& sd// actual measurement
+        SensorDetails& sd,// actual measurement
+                        bool error_mod_2pi
         ) {
     // create matrix for sigma points in measurement space
     MatrixXd Zsig = MatrixXd(sd.n_z, 2 * n_aug_ + 1);
@@ -345,8 +348,16 @@ void UKF::ProcessSensor(VectorXd& z,
     // HERE THE MERGE FROM THE OTHER FUNCTION
     MatrixXd Tc = X_deltas_*weights_.asDiagonal()*Z_deltas.transpose();
     MatrixXd K = Tc*S.inverse();
+    VectorXd error = z - z_pred;
+    if(error_mod_2pi){
+        while(error[1] > M_PI_2)
+            error[1] -= M_PI;
+        while(error[1] < -M_PI_2)
+            error[1] += M_PI;
+        std::cout << "timestamp " << time_us_/1e6 << " yaw error " << error[1] << std::endl;
+    }
 
-    x_ += K *(z - z_pred);
+    x_ += K *error;
     P_ -= K*S*K.transpose();
 }
 

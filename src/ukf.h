@@ -63,7 +63,8 @@ class UKF {
   void SigmaPointPrediction(double dt);
   void PredictMeanAndCovariance();
   void ProcessSensor(VectorXd& z,// actual measurement
-                                      SensorDetails& sd
+                                      SensorDetails& sd,
+                                      bool error_mod_2pi
     );
     // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
